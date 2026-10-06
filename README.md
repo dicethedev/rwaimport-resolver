@@ -283,13 +283,27 @@ scripts/          Pinned registry sync and opt-in live test
 docs/             Registry compatibility review and remaining priorities
 ```
 
+## Permission policies, operations and batches
+
+The resolver supports reviewed deployment permission policies, extended standard
+reads, provider circuit breakers and metrics, non-EVM caching, and mixed-ledger
+batch resolution. See [deployment policies](docs/DEPLOYMENT_POLICIES.md) and
+[operations and batches](docs/OPERATIONS.md) for configuration and precise scope.
+Registry publication can run automatically through the watcher or the supplied
+[publication workflow](docs/REGISTRY_UPDATES.md).
+
+Responses include `policyVersion`, `policyApplied`, `checksPerformed` and
+`checksUnavailable`. Role checks require explicit expected accounts and deployed ABI
+role IDs; the resolver does not infer them from product or organization labels.
+
 ## Registry compatibility and next steps
 
 The [registry compatibility review](docs/REGISTRY_COMPATIBILITY.md) records the exact
 GitHub revision inspected, consumer requirements already implemented, and remaining
-work. Evidence-freshness summaries, Solana/Stellar/Aptos adapters and ordered provider
-failover are implemented. Priorities include additional standard-specific policies,
-Token-2022 extension checks and deployment-specific permission checks. Inclusion in the registry standards catalog does not mean a live detector
+work. Permission policies, additional standard reads, Token-2022 extension controls,
+Stellar signer thresholds, Aptos resource expectations and legacy Coin observations
+are implemented within their documented scopes. Broader ABI/standard coverage and
+indexer-backed historical observations remain future extensions. Inclusion in the registry standards catalog does not mean a live detector
 exists for every standard.
 
 Registry-derived test fixtures and schema snapshots retain their upstream

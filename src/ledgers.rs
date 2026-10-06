@@ -33,7 +33,7 @@ pub fn validate_input(
             address.len() == 66
                 && address.starts_with("0x")
                 && address[2..].bytes().all(|b| b.is_ascii_hexdigit())
-                && code.is_none()
+                && code.is_none_or(|c| canonical_coin_type(c).is_some())
         }
         _ => return Err(ResolveError::UnsupportedChain),
     };
@@ -42,6 +42,37 @@ pub fn validate_input(
     } else {
         Err(ResolveError::InvalidAddress)
     }
+}
+/// Simple (non-generic) Move Coin types; canonical package IDs omit leading zeroes.
+pub fn canonical_coin_type(value: &str) -> Option<String> {
+    if value.len() > 256 {
+        return None;
+    }
+    let parts: Vec<_> = value.split("::").collect();
+    if parts.len() != 3 {
+        return None;
+    }
+    let package = parts[0].strip_prefix("0x")?;
+    if package.is_empty() || package.len() > 64 || !package.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return None;
+    }
+    for id in &parts[1..] {
+        if id.is_empty()
+            || !id
+                .bytes()
+                .enumerate()
+                .all(|(i, b)| b.is_ascii_alphabetic() || b == b'_' || i > 0 && b.is_ascii_digit())
+        {
+            return None;
+        }
+    }
+    let package = package.trim_start_matches('0');
+    Some(format!(
+        "0x{}::{}::{}",
+        if package.is_empty() { "0" } else { package },
+        parts[1],
+        parts[2]
+    ))
 }
 pub fn providers() -> Result<HashMap<String, Vec<Url>>, String> {
     let raw = std::env::var("LEDGER_URLS")
@@ -111,7 +142,7 @@ fn check(field: &str, expected: Value, actual: Value) -> Value {
     } else {
         "mismatched"
     };
-    json!({"field":field,"expected":expected,"actual":actual,"status":status})
+    json!({"field":field,"expected":crate::policies::value_text(&expected),"actual":if actual.is_null(){None}else{Some(crate::policies::value_text(&actual))},"status":status})
 }
 fn child(base: &Url, path: &str) -> Result<Url, ResolveError> {
     let mut base = base.clone();
@@ -160,8 +191,41 @@ async fn observe(
                 && account["executable"] == false
                 && account["data"]["parsed"]["info"]["isInitialized"] == true;
             let info = &account["data"]["parsed"]["info"];
+            let extensions = info.get("extensions").and_then(Value::as_array);
+            let mut extension_states = serde_json::Map::new();
+            if let Some(extensions) = extensions {
+                if extensions.len() > 128 {
+                    return Err(ResolveError::RpcUnavailable);
+                }
+                for extension in extensions {
+                    let name = extension["extension"]
+                        .as_str()
+                        .ok_or(ResolveError::RpcUnavailable)?;
+                    if extension_states
+                        .insert(
+                            name.into(),
+                            extension.get("state").cloned().unwrap_or(json!({})),
+                        )
+                        .is_some()
+                    {
+                        return Err(ResolveError::RpcUnavailable);
+                    }
+                }
+            }
+            let mut available_null_fields = vec![];
+            for key in ["mintAuthority", "freezeAuthority"] {
+                if info.get(key) == Some(&Value::Null) {
+                    available_null_fields.push(format!("/{key}"));
+                }
+            }
+            crate::policies::null_fields(
+                &Value::Object(extension_states.clone()),
+                "/extensions",
+                &mut available_null_fields,
+            );
+            let extension_controls = json!({"nonTransferable":extension_states.contains_key("nonTransferable"),"permanentDelegate":extension_states.get("permanentDelegate"),"transferHook":extension_states.get("transferHook"),"transferFeeConfig":extension_states.get("transferFeeConfig"),"defaultAccountState":extension_states.get("defaultAccountState"),"pausable":extension_states.get("pausableConfig"),"confidentialTransferMint":extension_states.get("confidentialTransferMint")});
             Ok(
-                json!({"exists":true,"slot":slot,"commitment":"finalized","owner":owner,"mint":mint,"decimals":if mint {info["decimals"].clone()} else {Value::Null},"supply":if mint {info["supply"].clone()} else {Value::Null},"mintAuthority":info["mintAuthority"],"freezeAuthority":info["freezeAuthority"]}),
+                json!({"exists":true,"slot":slot,"commitment":"finalized","availableNullFields":available_null_fields,"owner":owner,"mint":mint,"decimals":if mint {info["decimals"].clone()} else {Value::Null},"supply":if mint {info["supply"].clone()} else {Value::Null},"mintAuthority":info["mintAuthority"],"freezeAuthority":info["freezeAuthority"],"extensions":if extensions.is_some() {Some(extension_states.clone())} else if owner==TOKEN {Some(serde_json::Map::new())} else {None},"extensionControls":if extensions.is_some() || owner==TOKEN {Some(extension_controls)}else{None},"name":extension_states.get("tokenMetadata").map(|m|m["name"].clone()),"symbol":extension_states.get("tokenMetadata").map(|m|m["symbol"].clone())}),
             )
         }
         "stellar" => {
@@ -178,7 +242,7 @@ async fn observe(
                 .append_pair("asset_code", code.unwrap())
                 .append_pair("asset_issuer", address)
                 .append_pair("limit", "1");
-            let response = rpc.get_json(&assets).await.map_err(unavailable)?;
+            let response = rpc.get_json_for(url, &assets).await.map_err(unavailable)?;
             let records = response["_embedded"]["records"]
                 .as_array()
                 .ok_or(ResolveError::RpcUnavailable)?;
@@ -188,8 +252,16 @@ async fn observe(
             {
                 return Err(ResolveError::RpcUnavailable);
             }
+            let account_url = child(url, &format!("accounts/{address}"))?;
+            let issuer_account = rpc.get_json_for(url, &account_url).await.ok();
+            if issuer_account
+                .as_ref()
+                .is_some_and(|a| a["account_id"] != address)
+            {
+                return Err(ResolveError::RpcUnavailable);
+            }
             Ok(
-                json!({"exists":record.is_some(),"ledger":ledger,"consistency":"Horizon indexed state; reads are not pinned to a ledger","symbol":record.map(|r|r["asset_code"].clone()),"issuer":record.map(|r|r["asset_issuer"].clone()),"flags":record.map(|r|r["flags"].clone())}),
+                json!({"exists":record.is_some(),"ledger":ledger,"consistency":"Horizon indexed state; reads are not pinned to a ledger","symbol":record.map(|r|r["asset_code"].clone()),"issuer":record.map(|r|r["asset_issuer"].clone()),"flags":record.map(|r|r["flags"].clone()),"signers":issuer_account.as_ref().and_then(|a|a.get("signers")),"signerWeights":issuer_account.as_ref().and_then(|a|a["signers"].as_array()).map(|signers|signers.iter().filter_map(|s|Some((s["key"].as_str()?.to_owned(),s["weight"].clone()))).collect::<serde_json::Map<String,Value>>()),"thresholds":issuer_account.as_ref().and_then(|a|a.get("thresholds")),"issuerAccountFlags":issuer_account.as_ref().and_then(|a|a.get("flags")),"issuerAccountAvailable":issuer_account.is_some()}),
             )
         }
         "aptos" => {
@@ -201,11 +273,47 @@ async fn observe(
                 .as_str()
                 .filter(|v| !v.is_empty() && v.bytes().all(|b| b.is_ascii_digit()))
                 .ok_or(ResolveError::RpcUnavailable)?;
+            if let Some(coin_type) = code {
+                let coin_type =
+                    canonical_coin_type(coin_type).ok_or(ResolveError::InvalidAddress)?;
+                let creator = coin_type.split("::").next().unwrap()[2..].to_owned();
+                if format!("0x{creator:0>64}") != address.to_ascii_lowercase() {
+                    return Err(ResolveError::InvalidAddress);
+                }
+                let mut coin_url = child(url, &format!("accounts/{address}/resource/"))?;
+                coin_url
+                    .path_segments_mut()
+                    .map_err(|_| ResolveError::RpcUnavailable)?
+                    .pop_if_empty()
+                    .push(&format!("0x1::coin::CoinInfo<{coin_type}>"));
+                coin_url
+                    .query_pairs_mut()
+                    .append_pair("ledger_version", version);
+                let resource = match rpc.get_json_for(url, &coin_url).await {
+                    Ok(value) => value,
+                    Err(crate::rpc::live::RpcError::NotFound) => {
+                        return Ok(
+                            json!({"exists":false,"legacyCoin":false,"ledgerVersion":version,"coinType":coin_type}),
+                        )
+                    }
+                    Err(_) => return Err(ResolveError::RpcUnavailable),
+                };
+                if resource["type"] != format!("0x1::coin::CoinInfo<{coin_type}>") {
+                    return Err(ResolveError::RpcUnavailable);
+                }
+                let data = &resource["data"];
+                return Ok(
+                    json!({"exists":true,"legacyCoin":true,"coinType":coin_type,"ledgerVersion":version,"name":data["name"],"symbol":data["symbol"],"decimals":data["decimals"],"supply":data["supply"],"permissionsScope":"CoinInfo does not enumerate mint/burn/freeze capabilities"}),
+                );
+            }
             let mut resource_url = child(url, &format!("accounts/{address}/resources"))?;
             resource_url
                 .query_pairs_mut()
                 .append_pair("ledger_version", version);
-            let resources = rpc.get_json(&resource_url).await.map_err(unavailable)?;
+            let resources = rpc
+                .get_json_for(url, &resource_url)
+                .await
+                .map_err(unavailable)?;
             let resources = resources.as_array().ok_or(ResolveError::RpcUnavailable)?;
             let metadata = resources
                 .iter()
@@ -216,7 +324,7 @@ async fn observe(
                 .find(|r| r["type"] == "0x1::object::ObjectCore")
                 .map(|r| r["data"]["owner"].clone());
             Ok(
-                json!({"exists":!resources.is_empty(),"ledgerVersion":version,"fungibleAsset":metadata.is_some(),"name":data.map(|d|d["name"].clone()),"symbol":data.map(|d|d["symbol"].clone()),"decimals":data.map(|d|d["decimals"].clone()),"objectOwner":owner}),
+                json!({"exists":!resources.is_empty(),"ledgerVersion":version,"fungibleAsset":metadata.is_some(),"name":data.map(|d|d["name"].clone()),"symbol":data.map(|d|d["symbol"].clone()),"decimals":data.map(|d|d["decimals"].clone()),"objectOwner":owner,"allowUngatedTransfer":resources.iter().find(|r|r["type"]=="0x1::object::ObjectCore").map(|r|r["data"]["allow_ungated_transfer"].clone()),"resourcesByType":resources.iter().filter_map(|r|Some((r["type"].as_str()?.to_owned(),r["data"].clone()))).collect::<serde_json::Map<String,Value>>()}),
             )
         }
         _ => Err(ResolveError::UnsupportedChain),
@@ -257,8 +365,19 @@ pub async fn resolve(
                     a == address
                 }
             });
-            let same_code =
-                network != "stellar" || dep["verification"]["observedSymbol"].as_str() == code;
+            let same_code = match network {
+                "stellar" => dep["verification"]["observedSymbol"].as_str() == code,
+                "aptos" => {
+                    if let Some(coin) = code {
+                        dep["assetNamespace"] == "coin"
+                            && dep["assetReference"].as_str().and_then(canonical_coin_type)
+                                == canonical_coin_type(coin)
+                    } else {
+                        dep["assetNamespace"] != "coin"
+                    }
+                }
+                _ => true,
+            };
             if dep["chain"] == network && same_address && same_code {
                 matches.push((bundle, dep));
             }
@@ -278,6 +397,10 @@ pub async fn resolve(
         .map(Vec::as_slice)
         .unwrap_or_default();
     for (index, url) in urls.iter().enumerate() {
+        if !rpc.health.available(url) {
+            warnings.push("Provider circuit is open; trying next provider");
+            continue;
+        }
         let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
         let attempt = remaining / (urls.len() - index) as u32;
         match tokio::time::timeout(attempt, observe(rpc, url, network, address, code))
@@ -285,11 +408,16 @@ pub async fn resolve(
             .unwrap_or(Err(ResolveError::RpcUnavailable))
         {
             Ok(value) => {
+                rpc.health.observation_finished(url, true);
                 observation = value;
                 break;
             }
-            Err(ResolveError::RpcChainMismatch) => return Err(ResolveError::RpcChainMismatch),
+            Err(ResolveError::RpcChainMismatch) => {
+                rpc.health.reject_network(url);
+                return Err(ResolveError::RpcChainMismatch);
+            }
             Err(_) => {
+                rpc.health.observation_finished(url, false);
                 warnings.push("Provider observation unavailable; trying next configured provider")
             }
         }
@@ -340,7 +468,15 @@ pub async fn resolve(
                 observation["issuer"].clone(),
             ));
         }
+        if network == "aptos" && code.is_some() {
+            checks.push(check(
+                "legacyCoin",
+                json!(true),
+                observation["legacyCoin"].clone(),
+            ));
+        }
         if network == "aptos"
+            && code.is_none()
             && dep["standardIds"]
                 .as_array()
                 .unwrap()
@@ -379,7 +515,9 @@ pub async fn resolve(
     let organizations: Vec<_> = context.into_iter().flat_map(|(b,_)|b["asset"]["organizationRoles"].as_array().unwrap()).map(|role|json!({"organization":lookup("organizations",&role["organizationId"]),"roles":role["roles"]})).collect();
     Ok(json!({
         "status":status,
-        "input":{"network":network,"address":address,"assetCode":code},
+        "matched":context.map(|(b,d)|json!({"identity":{"productId":b["asset"]["id"],"issuerId":b["asset"]["issuerId"],"underlyingAssetId":b["asset"]["underlyingId"]},"deployment":{"network":d["chain"],"address":d["address"]}})),
+        "contract":null,
+        "input":{"network":network,"address":address,"assetCode":if network=="stellar"{code}else{None},"coinType":if network=="aptos"{code.and_then(canonical_coin_type)}else{None}},
         "registryRevision":snapshot.revision,
         "registryGeneratedAt":snapshot.generated_at,
         "resolvedAt":chrono::Utc::now().to_rfc3339(),
@@ -410,14 +548,14 @@ mod tests {
                 "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
             }),
             _ => {
-                json!({"context":{"slot":123},"value":{"owner":TOKEN_2022,"executable":false,"data":{"parsed":{"type":if mode.as_str()=="notmint" {"account"} else {"mint"},"info":{"decimals":9,"isInitialized":true,"supply":"10000000000000000000","mintAuthority":null,"freezeAuthority":null}}}}})
+                json!({"context":{"slot":123},"value":{"owner":TOKEN_2022,"executable":false,"data":{"parsed":{"type":if mode.as_str()=="notmint" {"account"} else {"mint"},"info":{"decimals":9,"isInitialized":true,"supply":"10000000000000000000","extensions":[{"extension":"nonTransferable","state":{}},{"extension":"permanentDelegate","state":{"delegate":"delegate"}}],"mintAuthority":null,"freezeAuthority":null}}}}})
             }
         };
         Json(json!({"jsonrpc":"2.0","id":body["id"],"result":result}))
     }
     async fn server(mode: &str) -> (Url, tokio::task::JoinHandle<()>) {
         let mode = Arc::new(mode.to_owned());
-        let app = Router::new().route("/",post(mock).get(||async {Json(json!({"network_passphrase":"Public Global Stellar Network ; September 2015","history_latest_ledger":123,"chain_id":1,"ledger_version":"456"}))})).route("/assets",get(|| async {Json(json!({"_embedded":{"records":[{"asset_issuer":"GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5","asset_code":"BENJI"}]}}))})).route("/accounts/{address}/resources",get(||async {Json(json!([{"type":"0x1::fungible_asset::Metadata","data":{"name":"Benji","symbol":"BENJI","decimals":6}}]))})).with_state(mode);
+        let app = Router::new().route("/",post(mock).get(||async {Json(json!({"network_passphrase":"Public Global Stellar Network ; September 2015","history_latest_ledger":123,"chain_id":1,"ledger_version":"456"}))})).route("/assets",get(|| async {Json(json!({"_embedded":{"records":[{"asset_issuer":"GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5","asset_code":"BENJI"}]}}))})).route("/accounts/{address}/resources",get(||async {Json(json!([{"type":"0x1::fungible_asset::Metadata","data":{"name":"Benji","symbol":"BENJI","decimals":6}}]))})).route("/accounts/{address}",get(|axum::extract::Path(address):axum::extract::Path<String>|async move {Json(json!({"account_id":address,"signers":[{"key":"signer","weight":2}],"thresholds":{"low_threshold":1,"med_threshold":2,"high_threshold":2},"flags":{"auth_required":true}}))})).route("/accounts/{address}/resource/{resource}",get(|axum::extract::Path((_address,resource)):axum::extract::Path<(String,String)>,axum::extract::Query(query):axum::extract::Query<HashMap<String,String>>|async move {assert_eq!(query["ledger_version"],"456");Json(json!({"type":resource,"data":{"name":"Legacy","symbol":"LEG","decimals":8,"supply":{"vec":[]}}}))})).with_state(mode);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}/", listener.local_addr().unwrap())
             .parse()
@@ -537,6 +675,72 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(unknown["status"], "UNKNOWN");
+        task.abort();
+    }
+    #[tokio::test]
+    async fn ledger_policies_cache_coalesce_and_compare_explicit_null_authorities() {
+        let (url, task) = server("ok").await;
+        let snapshot = Distribution::from_bytes(
+            include_bytes!("../fixtures/registry.json"),
+            &std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/schemas"),
+        )
+        .unwrap();
+        let address = "GyWgeqpy5GueU2YbkE8xqUeVEokCMMCEeUrfbtMw6phr";
+        let raw = json!({"schemaVersion":1,"deployments":[{"input":{"network":"solana","address":address},"ledgerChecks":[{"field":"mintAuthority","pointer":"/mintAuthority","expected":null},{"field":"nonTransferable","pointer":"/extensionControls/nonTransferable","expected":true}]}]});
+        let catalog =
+            crate::policies::PolicyCatalog::from_bytes(&serde_json::to_vec(&raw).unwrap()).unwrap();
+        let service = crate::service::ResolverService::with_sources(
+            crate::config::Config::from_env().unwrap(),
+            snapshot,
+            catalog,
+            HashMap::from([("solana".into(), vec![url])]),
+            HashMap::new(),
+        )
+        .unwrap();
+        let (a, b) = tokio::join!(
+            service.resolve_ledger("solana", address, None),
+            service.resolve_ledger("solana", address, None)
+        );
+        let a = a.unwrap();
+        let b = b.unwrap();
+        assert_eq!(a.resolved_at, b.resolved_at);
+        assert!(a.verification.policy_applied);
+        assert!(a.checks.iter().any(|c| c.field == "policy.mintAuthority"
+            && c.status == crate::types::CheckStatus::Verified));
+        assert_eq!(
+            a.observation.unwrap()["extensionControls"]["nonTransferable"],
+            true
+        );
+        assert!(service.metrics().contains("rwaimport_cache_hits_total 1"));
+        task.abort();
+    }
+    #[tokio::test]
+    async fn observes_stellar_signer_thresholds_and_legacy_coin_at_a_pinned_version() {
+        let (url, task) = server("ok").await;
+        let rpc = rpc();
+        let stellar = observe(
+            &rpc,
+            &url,
+            "stellar",
+            "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            Some("BENJI"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(stellar["thresholds"]["high_threshold"], 2);
+        assert_eq!(stellar["signers"][0]["weight"], 2);
+        let coin = observe(
+            &rpc,
+            &url,
+            "aptos",
+            &format!("0x{}1", "0".repeat(63)),
+            Some("0x1::sample::Coin"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(coin["legacyCoin"], true);
+        assert_eq!(coin["ledgerVersion"], "456");
+        assert_eq!(coin["symbol"], "LEG");
         task.abort();
     }
 }

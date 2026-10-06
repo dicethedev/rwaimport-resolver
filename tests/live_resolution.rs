@@ -108,6 +108,43 @@ async fn rpc(State(mock): State<Mock>, Json(body): Json<Value>) -> Json<Value> {
                 json!(format!("0x{}", "ff".repeat(32)))
             } else if selector == abi::selector("owner()") {
                 json!(format!("0x{}{}", "0".repeat(24), &IMPLEMENTATION[2..]))
+            } else if mock.mode == "policy" && selector == abi::selector("paused()") {
+                json!(word(0))
+            } else if mock.mode == "policy"
+                && selector.starts_with(&abi::selector("hasRole(bytes32,address)"))
+            {
+                json!(word(1))
+            } else if mock.mode == "policy"
+                && selector.starts_with(&abi::selector(
+                    "detectTransferRestriction(address,address,uint256)",
+                ))
+            {
+                json!(word(2))
+            } else if mock.mode == "policy"
+                && [
+                    "asset()",
+                    "identityRegistry()",
+                    "compliance()",
+                    "ruleEngine()",
+                ]
+                .iter()
+                .any(|sig| selector == abi::selector(sig))
+            {
+                json!(format!("0x{}{}", "0".repeat(24), &IMPLEMENTATION[2..]))
+            } else if mock.mode == "policy" && selector == abi::selector("VERSION()") {
+                json!(text("3.0.0"))
+            } else if mock.mode == "policy"
+                && (selector == abi::selector("totalAssets()")
+                    || [
+                        "convertToAssets(uint256)",
+                        "convertToShares(uint256)",
+                        "previewDeposit(uint256)",
+                        "previewRedeem(uint256)",
+                    ]
+                    .iter()
+                    .any(|sig| selector.starts_with(&abi::selector(sig))))
+            {
+                json!(word(0))
             } else if selector.starts_with(&abi::selector("supportsInterface(bytes4)")) {
                 json!(word(u64::from(selector[10..].starts_with("01ffc9a7"))))
             } else {
@@ -468,6 +505,7 @@ fn verifies_recorded_proxy_admin_as_a_separate_claim() {
         proxy: ProxyObservation::Undetermined,
         owner: None,
         contract_admin: Some(IMPLEMENTATION.into()),
+        policy_observations: Default::default(),
         capabilities: Default::default(),
         relationships: Default::default(),
         warnings: vec![],
@@ -518,4 +556,233 @@ async fn picks_up_atomically_activated_release_with_matching_schemas() {
         "b"
     );
     std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[tokio::test]
+async fn explicit_permission_policy_is_block_pinned_and_reports_missing_checks() {
+    let (url, mock, task) = mock_rpc("ok").await;
+    let policy = json!({"schemaVersion":1,"deployments":[{"input":{"chainId":1,"address":ADDRESS},"evmChecks":[{"field":"owner","signature":"owner()","expected":IMPLEMENTATION},{"field":"paused","signature":"paused()","expected":false}]}]});
+    let policies = rwaimport_resolver::policies::PolicyCatalog::from_bytes(
+        &serde_json::to_vec(&policy).unwrap(),
+    )
+    .unwrap();
+    let service =
+        ResolverService::with_policies(config(Some(url)), distribution(fixture()), policies)
+            .unwrap();
+    let result = service.resolve(1, ADDRESS).await.unwrap();
+    assert_eq!(result.result.status, Status::Partial);
+    assert!(result.verification.policy_applied);
+    assert!(result
+        .verification
+        .checks_performed
+        .contains(&"policy.owner".into()));
+    assert!(result
+        .verification
+        .checks_unavailable
+        .contains(&"policy.paused".into()));
+    for call in mock
+        .calls
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|c| c["method"] == "eth_call")
+    {
+        assert_eq!(
+            call["params"][1]["blockHash"],
+            format!("0x{}", "aa".repeat(32))
+        );
+    }
+    task.abort();
+}
+#[tokio::test]
+async fn batch_preserves_order_isolates_errors_and_exposes_metrics() {
+    let service = Arc::new(ResolverService::new(config(None), distribution(fixture())).unwrap());
+    let app = router(service);
+    let body = json!({"requests":[{"chainId":1,"address":ADDRESS},{"chainId":0,"address":ADDRESS},{"network":"solana","address":"bad"}]});
+    let response = app
+        .clone()
+        .oneshot(
+            axum::http::Request::builder()
+                .method("POST")
+                .uri("/v1/resolve/batch")
+                .header("content-type", "application/json")
+                .body(axum::body::Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+    let data: Value =
+        serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(data["data"][0]["index"], 0);
+    assert_eq!(data["data"][0]["data"]["status"], "PARTIAL");
+    assert_eq!(data["data"][1]["error"]["code"], "INVALID_CHAIN_ID");
+    assert_eq!(data["data"][2]["error"]["code"], "INVALID_ADDRESS");
+    let metrics = app
+        .clone()
+        .oneshot(
+            axum::http::Request::builder()
+                .uri("/metrics")
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let text = String::from_utf8(
+        metrics
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap();
+    assert!(text.contains("rwaimport_resolutions_total 3"));
+    let too_big = json!({"requests":vec![json!({"chainId":1,"address":ADDRESS});65]});
+    let response = app
+        .oneshot(
+            axum::http::Request::builder()
+                .method("POST")
+                .uri("/v1/resolve/batch")
+                .header("content-type", "application/json")
+                .body(axum::body::Body::from(too_big.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 400);
+}
+
+#[tokio::test]
+async fn standard_and_role_policies_compare_real_reads_without_claiming_full_conformance() {
+    let (url, _, task) = mock_rpc("policy").await;
+    let mut data = fixture();
+    data["assets"][0]["deployments"][0]["standardIds"] =
+        json!(["erc20", "erc4626", "erc3643", "erc1404", "cmtat"]);
+    let policy = json!({"schemaVersion":1,"deployments":[{"input":{"chainId":1,"address":ADDRESS},"evmChecks":[
+        {"field":"minter","signature":"hasRole(bytes32,address)","args":[format!("0x{}","0".repeat(64)),IMPLEMENTATION],"expected":true},
+        {"field":"restriction","signature":"detectTransferRestriction(address,address,uint256)","args":[ADDRESS,IMPLEMENTATION,"1"],"expected":"2"},
+        {"field":"paused","signature":"paused()","expected":false},
+        {"field":"version","signature":"VERSION()","expected":"3.0.0"}
+    ]}]});
+    let catalog = rwaimport_resolver::policies::PolicyCatalog::from_bytes(
+        &serde_json::to_vec(&policy).unwrap(),
+    )
+    .unwrap();
+    let service = ResolverService::with_policies(
+        config(Some(url.clone())),
+        distribution(data.clone()),
+        catalog,
+    )
+    .unwrap();
+    let result = service.resolve(1, ADDRESS).await.unwrap();
+    assert_eq!(result.result.status, Status::Verified);
+    assert!(result
+        .verification
+        .checks_performed
+        .contains(&"policy.minter".into()));
+    assert_eq!(
+        result.result.contract.unwrap().relationships["convertToAssetsZero"],
+        Some("0".into())
+    );
+    let mut changed = policy;
+    changed["deployments"][0]["evmChecks"][2]["expected"] = json!(true);
+    let catalog = rwaimport_resolver::policies::PolicyCatalog::from_bytes(
+        &serde_json::to_vec(&changed).unwrap(),
+    )
+    .unwrap();
+    let service =
+        ResolverService::with_policies(config(Some(url)), distribution(data), catalog).unwrap();
+    assert_eq!(
+        service.resolve(1, ADDRESS).await.unwrap().result.status,
+        Status::Mismatch
+    );
+    task.abort();
+}
+
+fn registry_policy_fixture(review_status: &str) -> Value {
+    let mut data = fixture();
+    let deployment = data["assets"][0]["deployments"][0].clone();
+    let unknown = json!({"availability":"unknown"});
+    data["deploymentPolicies"] = json!({
+        "schemaVersion":1,"generatedAt":"2026-10-06T00:00:00Z","deployments":[{
+            "assetId":data["assets"][0]["asset"]["id"],
+            "deployment":{"chain":deployment["chain"],"address":deployment["address"]},
+            "input":{"chainId":1,"address":deployment["address"]},
+            "permissions":{"owner":unknown,"admin":unknown,"mint":unknown,"burn":unknown,"pause":unknown,"upgrade":unknown},
+            "standardPolicies":{},"supportedChecks":["evm-read"],
+            "evmChecks":[{"field":"paused","signature":"paused()","expected":false}],"ledgerChecks":[],
+            "provenance":{"sourceIds":[data["assets"][0]["sources"][0]["id"]],"reviewedAt":"2026-10-06","reviewer":"test-fixture","reviewStatus":review_status}
+        }]
+    });
+    data
+}
+#[tokio::test]
+async fn consumes_only_verified_registry_policies_from_the_snapshot() {
+    for (review, applied) in [
+        ("verified", true),
+        ("needs-review", false),
+        ("disputed", false),
+    ] {
+        let service = ResolverService::with_policies(
+            config(None),
+            distribution(registry_policy_fixture(review)),
+            rwaimport_resolver::policies::PolicyCatalog::empty(),
+        )
+        .unwrap();
+        let result = service.resolve(1, ADDRESS).await.unwrap();
+        assert_eq!(result.verification.policy_applied, applied);
+        assert!(result
+            .verification
+            .policy_version
+            .starts_with("resolver-policy-v1:"));
+        if applied {
+            assert!(result
+                .verification
+                .checks_unavailable
+                .contains(&"policy.paused".to_string()));
+        }
+    }
+}
+#[test]
+fn rejects_registry_policies_with_missing_evidence_or_wrong_locator() {
+    for field in ["evidence", "locator", "schema"] {
+        let mut data = registry_policy_fixture("verified");
+        match field {
+            "evidence" => {
+                data["deploymentPolicies"]["deployments"][0]["provenance"]["sourceIds"] =
+                    json!(["missing-source"])
+            }
+            "locator" => {
+                data["deploymentPolicies"]["deployments"][0]["input"]["chainId"] = json!(99999)
+            }
+            _ => data["deploymentPolicies"]["schemaVersion"] = json!(2),
+        }
+        assert!(Distribution::from_bytes(
+            &serde_json::to_vec(&data).unwrap(),
+            &fixture_dir().join("schemas")
+        )
+        .is_err());
+    }
+}
+#[tokio::test]
+async fn batch_obeys_configured_response_byte_budget() {
+    let mut service = ResolverService::with_policies(
+        config(None),
+        distribution(fixture()),
+        rwaimport_resolver::policies::PolicyCatalog::empty(),
+    )
+    .unwrap();
+    service.max_response_bytes = 1024;
+    let service = Arc::new(service);
+    let input = rwaimport_resolver::input::ResolutionInput::Evm(
+        rwaimport_resolver::input::ResolveInput::new(1, ADDRESS).unwrap(),
+    );
+    assert!(service
+        .batch(rwaimport_resolver::batch::BatchRequest {
+            requests: vec![input]
+        })
+        .await
+        .is_err());
 }

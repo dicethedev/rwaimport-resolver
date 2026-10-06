@@ -85,7 +85,7 @@ def main():
             evm, samples = select_samples(registry, endpoints)
             resolver_port = free_port()
             resolver_url = f'http://127.0.0.1:{resolver_port}'
-            env = dict(os.environ, REGISTRY_DIST_DIR=str(registry_dir), RESOLVER_BIND=f'127.0.0.1:{resolver_port}', RPC_URLS=json.dumps(endpoints), RPC_TIMEOUT_MS='8000', RESOLVE_TIMEOUT_MS='30000')
+            env = dict(os.environ, REGISTRY_DIST_DIR=str(registry_dir), RESOLVER_BIND=f'127.0.0.1:{resolver_port}', RPC_URLS=json.dumps(endpoints), RPC_TIMEOUT_MS='8000', RESOLVE_TIMEOUT_MS='30000', PROVIDER_PROBE_INTERVAL_SECONDS='0')
             resolver = subprocess.Popen([str(ROOT / 'target/debug/rwaimport-resolver')], cwd=ROOT, env=env, stdout=logs, stderr=logs)
             processes.append(resolver)
             wait_ready(resolver, f'{resolver_url}/health/ready')

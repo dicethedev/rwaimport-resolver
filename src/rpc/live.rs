@@ -21,6 +21,7 @@ const MAX_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
 #[derive(Clone)]
 pub struct LiveRpc {
     client: Client,
+    pub health: crate::operations::ProviderHealth,
     timeout: Duration,
     retries: usize,
     next_id: Arc<AtomicU64>,
@@ -30,6 +31,7 @@ pub(crate) enum RpcError {
     Unavailable,
     Remote,
     Malformed,
+    NotFound,
 }
 impl LiveRpc {
     pub fn new(config: &Config) -> Result<Self, String> {
@@ -41,12 +43,24 @@ impl LiveRpc {
             .map_err(|_| "Cannot initialize RPC client")?;
         Ok(Self {
             client,
+            health: crate::operations::ProviderHealth::new(3, Duration::from_secs(30)),
             timeout: config.rpc_timeout,
             retries: config.rpc_retries,
             next_id: Arc::new(AtomicU64::new(1)),
         })
     }
     pub(crate) async fn request(
+        &self,
+        url: &Url,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, RpcError> {
+        let permit = self.health.acquire(url).ok_or(RpcError::Unavailable)?;
+        let result = self.request_inner(url, method, params).await;
+        permit.finish(matches!(&result, Ok(_) | Err(RpcError::Remote)));
+        result
+    }
+    async fn request_inner(
         &self,
         url: &Url,
         method: &str,
@@ -101,6 +115,15 @@ impl LiveRpc {
         value.get("result").cloned().ok_or(RpcError::Malformed)
     }
     pub(crate) async fn get_json(&self, url: &Url) -> Result<Value, RpcError> {
+        self.get_json_for(url, url).await
+    }
+    pub(crate) async fn get_json_for(&self, provider: &Url, url: &Url) -> Result<Value, RpcError> {
+        let permit = self.health.acquire(provider).ok_or(RpcError::Unavailable)?;
+        let result = self.get_json_inner(url).await;
+        permit.finish(matches!(&result, Ok(_) | Err(RpcError::NotFound)));
+        result
+    }
+    async fn get_json_inner(&self, url: &Url) -> Result<Value, RpcError> {
         for attempt in 0..=self.retries {
             let result = tokio::time::timeout(self.timeout, self.get_json_once(url))
                 .await
@@ -121,7 +144,8 @@ impl LiveRpc {
             .send()
             .await
             .map_err(|_| RpcError::Unavailable)?;
-        if !response.status().is_success() {
+        let status = response.status();
+        if !status.is_success() && status != reqwest::StatusCode::NOT_FOUND {
             return Err(RpcError::Unavailable);
         }
         let mut raw = Vec::new();
@@ -131,7 +155,16 @@ impl LiveRpc {
             }
             raw.extend_from_slice(&chunk);
         }
-        serde_json::from_slice(&raw).map_err(|_| RpcError::Malformed)
+        let value: Value = serde_json::from_slice(&raw).map_err(|_| RpcError::Malformed)?;
+        if status == reqwest::StatusCode::NOT_FOUND {
+            if value["error_code"] == "resource_not_found"
+                || value["error_code"] == "account_not_found"
+            {
+                return Err(RpcError::NotFound);
+            }
+            return Err(RpcError::Unavailable);
+        }
+        Ok(value)
     }
     async fn raw_call(
         &self,
@@ -172,6 +205,15 @@ impl LiveRpc {
         url: &Url,
         input: &ResolveInput,
         standards: &[String],
+    ) -> Result<ContractObservation, ResolveError> {
+        self.observe_with_policy(url, input, standards, None).await
+    }
+    pub async fn observe_with_policy(
+        &self,
+        url: &Url,
+        input: &ResolveInput,
+        standards: &[String],
+        policy: Option<&crate::policies::DeploymentPolicy>,
     ) -> Result<ContractObservation, ResolveError> {
         let remote_chain = self
             .request(url, "eth_chainId", json!([]))
@@ -218,6 +260,7 @@ impl LiveRpc {
             proxy: ProxyObservation::Undetermined,
             owner: None,
             contract_admin: None,
+            policy_observations: BTreeMap::new(),
             capabilities: BTreeMap::new(),
             relationships: BTreeMap::new(),
             warnings: vec![],
@@ -343,6 +386,65 @@ impl LiveRpc {
             observation
                 .relationships
                 .insert("granularity".into(), granularity);
+        }
+        if standards.iter().any(|s| s == "erc4626") {
+            for (field, signature) in [
+                ("convertToAssetsZero", "convertToAssets(uint256)"),
+                ("convertToSharesZero", "convertToShares(uint256)"),
+                ("previewDepositZero", "previewDeposit(uint256)"),
+                ("previewRedeemZero", "previewRedeem(uint256)"),
+            ] {
+                let data = format!("{}{}", abi::selector(signature), "0".repeat(64));
+                let value = self
+                    .raw_call(url, address, &data, &block)
+                    .await
+                    .as_deref()
+                    .and_then(abi::uint256);
+                observation
+                    .capabilities
+                    .insert(format!("erc4626.{field}"), value.as_ref().map(|_| true));
+                observation.relationships.insert(field.into(), value);
+            }
+        }
+        if standards.iter().any(|s| s == "erc3643" || s == "cmtat") {
+            let paused = self
+                .call(url, address, "paused()", &block)
+                .await
+                .as_deref()
+                .and_then(abi::boolean);
+            observation
+                .capabilities
+                .insert("pauseStateReadable".into(), paused.map(|_| true));
+            observation
+                .relationships
+                .insert("paused".into(), paused.map(|v| v.to_string()));
+        }
+        if let Some(policy) = policy {
+            for check in &policy.evm_checks {
+                let data =
+                    crate::policies::calldata(check).map_err(|_| ResolveError::RpcUnavailable)?;
+                let target = match check.target {
+                    crate::policies::ReadTarget::Deployment => Some(address.clone()),
+                    crate::policies::ReadTarget::Implementation => match &observation.proxy {
+                        ProxyObservation::Detected { implementation, .. } => {
+                            Some(implementation.clone())
+                        }
+                        _ => None,
+                    },
+                    crate::policies::ReadTarget::ProxyAdmin => observation.contract_admin.clone(),
+                };
+                let value = if let Some(target) = target {
+                    self.raw_call(url, &target, &data, &block)
+                        .await
+                        .as_deref()
+                        .and_then(|raw| crate::policies::decode(&check.signature, raw))
+                } else {
+                    None
+                };
+                observation
+                    .policy_observations
+                    .insert(check.field.clone(), value);
+            }
         }
         // Detect reorgs during the observation. Do not return a mixture of forks.
         let confirm = self

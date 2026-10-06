@@ -28,28 +28,22 @@ A missing manifest permits the existing raw-distribution integration; a present
 invalid manifest causes load/refresh failure. Publish complete distributions
 atomically to avoid temporary mismatches during deployment.
 
-## Remaining implementation priorities
+## Extended consumer capabilities
 
-Evidence-freshness summaries and ordered provider failover are implemented.
-[Non-EVM adapters](NON_EVM_ADAPTERS.md) support Solana mints, Stellar issuer/asset pairs
-and Aptos fungible-asset objects. Remaining gaps are not inferred from the catalog.
+- [Deployment policies](DEPLOYMENT_POLICIES.md) compare explicit owners, role holders,
+  pause state, implementation/admin targets and configured transfer scenarios.
+- Additional standard reads cover ERC-4626 conversions/previews, ERC-3643 pause and
+  relationships, and configured ERC-1404/CMTAT getters. Unsupported variants remain
+  unavailable; no full standard-conformance claim is inferred from the catalog.
+- [Non-EVM policies](NON_EVM_ADAPTERS.md) cover reported Token-2022 extension controls,
+  Stellar signer thresholds, Aptos resource fields and simple legacy Coin locators.
+- [Operations](OPERATIONS.md) include provider circuits, probes, metrics, structured
+  logs, stale-registry readiness, shared envelopes, ledger caching and bounded batches.
+- [Registry publication](REGISTRY_UPDATES.md) includes a watcher and a pinned-artifact
+  workflow with an explicitly configured runtime activation job.
 
-1. **Evidence lifecycle:** source-review and recorded-observation age summaries are
-   available. Preserve source hashes, immutable URLs,
-   source versions and snapshot paths without treating an external link as live data.
-2. **Additional EVM policies:** add specification-specific probes for ERC-1404,
-   CMTAT and other catalog standards as applicable to actual deployments. Treat draft
-   standards such as ERC-8056 according to their recorded status; stock-split display
-   values must remain distinct from raw balances and total supply.
-3. **Non-EVM policy depth:** add Token-2022 extension interpretation, Stellar signer
-   policies, Aptos permissions and legacy Coin locators. Existing ledger routes
-   validate selected identity and recorded metadata claims.
-4. **Deployment policy coverage:** expand tests and probes for actual contract ABIs,
-   permissions and roles. Zero EIP-1967 slots or unavailable owner reads do not prove
-   that a contract lacks upgrade or transfer controls.
-5. **Context and operations:** consider completeness scores, product history and
-   relationships and registry-age readiness policy. Ordered provider failover is available. Completeness
-   describes documentation coverage; it must not become a live-verification score.
+Remaining extensions include generic Aptos Coin types, raw Token-2022 TLV decoding,
+additional deployment ABI variants, product completeness scoring and indexed history.
 
 Continuous monitoring, change history from new observations and indexed state remain
 indexer work. No resolver query writes reviewed registry evidence or source records.

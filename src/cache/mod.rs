@@ -9,19 +9,19 @@ pub struct CacheKey {
     pub input: ResolveInput,
     pub revision: String,
 }
-struct Entry {
-    value: Resolution,
+struct Entry<V> {
+    value: V,
     expires: Instant,
     size: usize,
 }
-pub struct ResolutionCache {
-    entries: HashMap<CacheKey, Entry>,
+pub struct ResolutionCache<K = CacheKey, V = Resolution> {
+    entries: HashMap<K, Entry<V>>,
     ttl: Duration,
     max_entries: usize,
     max_bytes: usize,
     bytes: usize,
 }
-impl ResolutionCache {
+impl<K: std::hash::Hash + Eq + Clone, V: serde::Serialize + Clone> ResolutionCache<K, V> {
     pub fn new(ttl: Duration, max_entries: usize, max_bytes: usize) -> Self {
         Self {
             entries: HashMap::new(),
@@ -31,16 +31,15 @@ impl ResolutionCache {
             bytes: 0,
         }
     }
-    pub fn get(&mut self, key: &CacheKey) -> Option<Resolution> {
+    pub fn get(&mut self, key: &K) -> Option<V> {
         self.expire();
         self.entries.get(key).map(|v| v.value.clone())
     }
-    pub fn insert(&mut self, key: CacheKey, value: Resolution) {
+    pub fn insert(&mut self, key: K, value: V) {
         let size = serde_json::to_vec(&value)
             .map(|v| v.len())
             .unwrap_or(usize::MAX)
-            + key.input.address.len()
-            + key.revision.len();
+            + std::mem::size_of_val(&key);
         if self.ttl.is_zero() || self.max_entries == 0 || size > self.max_bytes {
             return;
         }

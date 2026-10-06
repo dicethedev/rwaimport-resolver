@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "deployments": [
+    {
+      "input": {"chainId": 1, "address": "0x1111111111111111111111111111111111111111"},
+      "evmChecks": [
+        {"field": "owner", "signature": "owner()", "expected": "0x2222222222222222222222222222222222222222"},
+        {"field": "paused", "signature": "paused()", "expected": false},
+        {"field": "defaultAdmin", "signature": "hasRole(bytes32,address)", "args": ["0x0000000000000000000000000000000000000000000000000000000000000000", "0x2222222222222222222222222222222222222222"], "expected": true},
+        {"field": "upgradeSlot", "target": "implementation", "signature": "proxiableUUID()", "expected": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"}
+      ]
+    },
+    {
+      "input": {"network": "solana", "address": "GyWgeqpy5GueU2YbkE8xqUeVEokCMMCEeUrfbtMw6phr"},
+      "ledgerChecks": [
+        {"field": "mintAuthority", "pointer": "/mintAuthority", "expected": null},
+        {"field": "nonTransferable", "pointer": "/extensionControls/nonTransferable", "expected": false}
+      ]
+    }
+  ]
+}

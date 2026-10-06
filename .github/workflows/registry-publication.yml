@@ -1,0 +1,77 @@
+name: Publish pinned registry
+on:
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+    inputs:
+      registry_ref:
+        description: Registry commit, branch or tag
+        default: main
+        required: true
+        type: string
+  repository_dispatch:
+    types: [registry-published]
+permissions:
+  contents: read
+concurrency:
+  group: registry-publication
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      commit: ${{ steps.pin.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --locked
+      - name: Build and validate immutable release
+        env:
+          REGISTRY_REF: ${{ inputs.registry_ref || github.event.client_payload.commit || 'main' }}
+        run: python3 scripts/sync-registry.py --ref "$REGISTRY_REF" --root "$RUNNER_TEMP/registry-release"
+      - name: Prepare transport artifact and exact pin
+        id: pin
+        env:
+          PUBLICATION_ROOT: ${{ runner.temp }}/registry-release
+        run: |
+          python3 - <<'PY'
+          import json, os, shutil
+          from pathlib import Path
+          root = Path(os.environ['PUBLICATION_ROOT'])
+          source = (root / 'current').resolve()
+          shutil.copytree(source, 'registry-artifact')
+          pin = json.loads((source / 'registry-pin.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f"commit={pin['commit']}\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pinned-registry
+          path: registry-artifact/
+          retention-days: 7
+          if-no-files-found: error
+  activate:
+    if: ${{ vars.REGISTRY_PUBLICATION_ENABLED == 'true' }}
+    needs: build
+    runs-on: [self-hosted, rwaimport-registry-sync]
+    environment: registry-production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: pinned-registry
+          path: registry-artifact
+      - name: Validate and activate on the shared runtime volume
+        env:
+          REGISTRY_COMMIT: ${{ needs.build.outputs.commit }}
+          REGISTRY_RELEASE_ROOT: ${{ vars.REGISTRY_RELEASE_ROOT }}
+          RESOLVER_VALIDATOR: ${{ vars.RESOLVER_VALIDATOR }}
+        run: |
+          test -n "$REGISTRY_RELEASE_ROOT"
+          test -n "$RESOLVER_VALIDATOR"
+          python3 scripts/sync-registry.py --source registry-artifact --commit "$REGISTRY_COMMIT" --root "$REGISTRY_RELEASE_ROOT" --validator "$RESOLVER_VALIDATOR"

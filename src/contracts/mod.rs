@@ -20,4 +20,6 @@ pub struct ContractObservation {
     pub capabilities: BTreeMap<String, Option<bool>>,
     pub relationships: BTreeMap<String, Option<String>>,
     pub warnings: Vec<String>,
+    #[serde(default)]
+    pub policy_observations: BTreeMap<String, Option<serde_json::Value>>,
 }

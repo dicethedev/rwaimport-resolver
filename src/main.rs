@@ -30,16 +30,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             interval.tick().await;
             if let Err(error) = poller.refresh().await {
-                eprintln!("Registry refresh failed: {error}; retaining last valid revision");
+                rwaimport_resolver::operations::event(
+                    "registryRefreshFailed",
+                    serde_json::json!({"error": error.to_string(), "retainedLastValidRevision": true}),
+                );
             }
         }
     });
+    let probe_service = service.clone();
+    let probe_seconds = std::env::var("PROVIDER_PROBE_INTERVAL_SECONDS")
+        .unwrap_or_else(|_| "60".into())
+        .parse::<u64>()
+        .map_err(|_| "Invalid PROVIDER_PROBE_INTERVAL_SECONDS")?;
+    if probe_seconds > 3600 || probe_seconds > 0 && probe_seconds < 10 {
+        return Err("Probe interval must be zero or 10..3600 seconds".into());
+    }
+    let probes = tokio::spawn(async move {
+        if probe_seconds == 0 {
+            return;
+        }
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(probe_seconds));
+        loop {
+            interval.tick().await;
+            probe_service.probe_providers().await;
+        }
+    });
     let listener = tokio::net::TcpListener::bind(config.bind).await?;
-    eprintln!("RWAimport resolver listening on {}", listener.local_addr()?);
+    rwaimport_resolver::operations::event(
+        "listening",
+        serde_json::json!({"bind":listener.local_addr()?.to_string()}),
+    );
     let result = axum::serve(listener, router(service))
         .with_graceful_shutdown(shutdown())
         .await;
     refresh.abort();
+    probes.abort();
     result?;
     Ok(())
 }

@@ -51,7 +51,13 @@ impl Config {
             registry_dir: std::env::var_os("REGISTRY_DIST_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
-                    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../rwaimport-registry/dist")
+                    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                    let published = root.join("registry-releases/current/dist");
+                    if published.is_dir() {
+                        published
+                    } else {
+                        root.join("../rwaimport-registry/dist")
+                    }
                 }),
             rpc_urls,
             rpc_timeout: Duration::from_millis(number("RPC_TIMEOUT_MS", 2000, 100, 30000)? as u64),

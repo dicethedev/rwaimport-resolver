@@ -83,4 +83,73 @@ pub struct Resolution {
     pub verification_scope: String,
     #[serde(default)]
     pub evidence_freshness: Value,
+    #[serde(flatten, default)]
+    pub verification: VerificationMetadata,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct VerificationMetadata {
+    pub policy_version: String,
+    pub policy_applied: bool,
+    pub checks_performed: Vec<String>,
+    pub checks_unavailable: Vec<String>,
+}
+impl VerificationMetadata {
+    pub fn new(version: &str, applied: bool, checks: &[Check]) -> Self {
+        Self {
+            policy_version: version.into(),
+            policy_applied: applied,
+            checks_performed: checks
+                .iter()
+                .filter(|c| c.status != CheckStatus::Unavailable)
+                .map(|c| c.field.clone())
+                .collect(),
+            checks_unavailable: checks
+                .iter()
+                .filter(|c| c.status == CheckStatus::Unavailable)
+                .map(|c| c.field.clone())
+                .collect(),
+        }
+    }
+}
+/// Shared envelope; input and observation retain ledger-specific information.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolutionEnvelope {
+    pub status: Status,
+    pub input: crate::input::ResolutionInput,
+    pub registry_revision: String,
+    #[serde(default)]
+    pub matched: Option<Value>,
+    #[serde(default)]
+    pub contract: Option<ContractObservation>,
+    #[serde(default)]
+    pub observation: Option<Value>,
+    pub checks: Vec<Check>,
+    pub warnings: Vec<String>,
+    pub resolved_at: String,
+    pub registry_generated_at: String,
+    pub product: Option<Value>,
+    pub issuer: Option<Value>,
+    pub underlying_asset: Option<Value>,
+    pub deployment: Option<Value>,
+    pub compliance: Option<Value>,
+    pub valuation: Option<Value>,
+    pub network: Option<Value>,
+    pub standards: Vec<Value>,
+    pub organizations: Vec<Value>,
+    pub evidence: Option<Value>,
+    pub evidence_freshness: Value,
+    pub verification_scope: String,
+    #[serde(flatten, default)]
+    pub verification: VerificationMetadata,
+}
+impl TryFrom<Resolution> for ResolutionEnvelope {
+    type Error = serde_json::Error;
+    fn try_from(value: Resolution) -> Result<Self, Self::Error> {
+        let mut raw = serde_json::to_value(value)?;
+        raw["observation"] = raw["contract"].clone();
+        serde_json::from_value(raw)
+    }
 }

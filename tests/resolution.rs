@@ -52,6 +52,7 @@ fn observation() -> ContractObservation {
         runtime_code_sha256: "hash".into(),
         owner: None,
         contract_admin: None,
+        policy_observations: Default::default(),
         capabilities: Default::default(),
         relationships: Default::default(),
         warnings: vec![],

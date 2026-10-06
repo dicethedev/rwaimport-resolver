@@ -34,6 +34,7 @@ pub struct Distribution {
     chains: HashMap<u64, String>,
     contexts: HashMap<ResolveInput, Context>,
     pub ledger_registry: Value,
+    pub policies: crate::policies::PolicyCatalog,
 }
 impl Distribution {
     pub fn load(directory: &Path) -> Result<Self, String> {
@@ -322,7 +323,107 @@ impl Distribution {
                 }
             }
         }
+        let policies = if let Some(catalog) = data.get("deploymentPolicies") {
+            let schema: Value = serde_json::from_slice(&read_bounded(
+                &schema_dir.join("deployment-policies.schema.json"),
+            )?)
+            .map_err(|_| "Invalid policy schema JSON")?;
+            let validator = jsonschema::options()
+                .should_validate_formats(true)
+                .build(&schema)
+                .map_err(|_| "Invalid policy schema")?;
+            if !validator.is_valid(catalog) {
+                return Err("Invalid registry deployment policies".into());
+            }
+            let mut keys = HashSet::new();
+            for policy in array(catalog, "deployments")? {
+                let product = array(&data, "assets")?
+                    .iter()
+                    .find(|p| p["asset"]["id"] == policy["assetId"])
+                    .ok_or("Unknown policy product")?;
+                let target = array(product, "deployments")?
+                    .iter()
+                    .find(|d| {
+                        d["chain"] == policy["deployment"]["chain"]
+                            && if policy["input"].get("chainId").is_some()
+                                || policy["input"]["network"] == "aptos"
+                            {
+                                d["address"].as_str().map(str::to_ascii_lowercase)
+                                    == policy["deployment"]["address"]
+                                        .as_str()
+                                        .map(str::to_ascii_lowercase)
+                            } else {
+                                d["address"] == policy["deployment"]["address"]
+                            }
+                    })
+                    .ok_or("Unknown policy deployment")?;
+                if policy["deployment"].get("assetReference").is_some()
+                    && policy["deployment"]["assetReference"] != target["assetReference"]
+                {
+                    return Err("Policy asset reference mismatch".into());
+                }
+                let input: crate::input::ResolutionInput =
+                    serde_json::from_value(policy["input"].clone())
+                        .map_err(|_| "Invalid policy input")?;
+                let input = input.canonical().map_err(|_| "Invalid policy locator")?;
+                if !keys.insert(input.key()) {
+                    return Err("Duplicate policy locator".into());
+                }
+                match &input {
+                    crate::input::ResolutionInput::Evm(value) => {
+                        if target["chainId"].as_u64() != Some(value.chain_id)
+                            || target["address"]
+                                .as_str()
+                                .map(str::to_ascii_lowercase)
+                                .as_deref()
+                                != Some(&value.address)
+                        {
+                            return Err("Policy EVM locator mismatch".into());
+                        }
+                    }
+                    crate::input::ResolutionInput::Ledger(value) => {
+                        let address_matches = if value.network == "aptos" {
+                            target["address"]
+                                .as_str()
+                                .map(str::to_ascii_lowercase)
+                                .as_deref()
+                                == Some(&value.address)
+                        } else {
+                            target["address"].as_str() == Some(value.address.as_str())
+                        };
+                        let expected_coin = if target["assetNamespace"] == "coin" {
+                            target["assetReference"]
+                                .as_str()
+                                .and_then(crate::ledgers::canonical_coin_type)
+                        } else {
+                            None
+                        };
+                        if value.network == "aptos" && value.coin_type != expected_coin {
+                            return Err("Policy Aptos coin locator mismatch".into());
+                        }
+                        let symbol = target["verification"]["observedSymbol"]
+                            .as_str()
+                            .or_else(|| product["asset"]["symbol"].as_str());
+                        if !address_matches
+                            || (value.network == "stellar" && value.asset_code.as_deref() != symbol)
+                            || target["chain"].as_str() != Some(value.network.as_str())
+                        {
+                            return Err("Policy ledger network mismatch".into());
+                        }
+                    }
+                }
+                let sources: HashSet<&str> = array(product, "sources")?
+                    .iter()
+                    .filter_map(|source| source["id"].as_str())
+                    .collect();
+                check_sources(&policy["provenance"]["sourceIds"], &sources)?;
+            }
+            crate::policies::PolicyCatalog::from_registry(catalog)?
+        } else {
+            crate::policies::PolicyCatalog::empty()
+        };
         Ok(Self {
+            policies,
             revision: hex::encode(Sha256::digest(raw)),
             generated_at,
             chains,

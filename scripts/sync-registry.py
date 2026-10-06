@@ -71,6 +71,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--ref', help='Exact commit SHA or branch/tag to resolve to a SHA')
+    mode.add_argument('--source', type=Path, help='Publish an already-built trusted release artifact')
+    parser.add_argument('--commit', help='Exact source commit, required with --source')
     mode.add_argument('--activate', help='Reactivate an existing release ID without rebuilding')
     parser.add_argument('--root', type=Path, required=True, help='Shared publication directory used by API and resolver')
     parser.add_argument('--validator', type=Path, default=ROOT / 'target/debug/rwaimport-resolver')
@@ -80,6 +82,13 @@ def main():
     validator = args.validator.resolve()
     if not validator.is_file():
         parser.error('Build the resolver first, or supply --validator')
+    if args.source:
+        if not args.commit or not re.fullmatch(r'[0-9a-f]{40}', args.commit):
+            parser.error('--source requires --commit with an exact SHA')
+        print(json.dumps(publish_release(args.source.resolve(), args.root.resolve(), args.commit, validator), indent=2))
+        return
+    if args.commit:
+        parser.error('--commit is only valid with --source')
     if args.activate:
         if not re.fullmatch(r'[0-9a-f]{40}-[0-9a-f]{64}', args.activate):
             parser.error('Invalid release ID')

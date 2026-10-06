@@ -30,7 +30,9 @@ class RegistrySyncTests(unittest.TestCase):
 
             write_distribution()
             publication = root / 'published'
-            first = sync.publish_release(source, publication, 'a' * 40, VALIDATOR)
+            import subprocess
+            subprocess.run(['python3', str(ROOT / 'scripts/sync-registry.py'), '--source', str(source), '--commit', 'a' * 40, '--root', str(publication), '--validator', str(VALIDATOR)], check=True, capture_output=True)
+            first = json.loads((publication / 'current/registry-pin.json').read_text())
             active = (publication / 'current').resolve()
             self.assertEqual(first['commit'], 'a' * 40)
             self.assertEqual(json.loads((active / 'registry-pin.json').read_text()), first)

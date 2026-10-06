@@ -46,6 +46,11 @@ both services with the same absolute path:
 export REGISTRY_DIST_DIR=/absolute/path/to/registry-releases/current/dist
 ```
 
+When `REGISTRY_DIST_DIR` is unset, the resolver prefers its local
+`registry-releases/current/dist` if present, and otherwise uses the sibling registry
+checkout. An explicit environment setting always takes precedence. Configure the
+API's path explicitly when both services should consume the same pinned release.
+
 New assets become resolvable after publication and the next successful poll, normally
 within 60 seconds. Each ingestion resolves the pointer once and reads data/schemas
 from that immutable release. The services can switch at different moments; resolution
@@ -71,8 +76,9 @@ detect inconsistent bytes but do not authenticate a publisher.
 ## Automated publication
 
 A deployment job can run this command after a registry push/release, supplying the
-triggering commit SHA. An operator scheduler can instead run `--ref main`. This change
-does not install an external workflow or scheduler. API/resolver CI compatibility
+triggering commit SHA. The included GitHub workflow and polling watcher below
+provide scheduled publication; runtime activation requires operator configuration.
+API/resolver CI compatibility
 pins remain separate from the runtime data pin: schema-version changes must pass
 both consumers' compatibility checks before activation.
 
@@ -80,3 +86,43 @@ Schema IDs now use `https://rwaimport.xyz/schemas/`. Validation reads the local 
 files shipped with the release; the domain need not serve them for validation. If
 the URLs should be browsable, publish the schemas separately after configuring the
 domain. Push the registry's domain changes before selecting its new GitHub commit.
+
+## Automatic watcher
+
+Run the watcher beside the services, against their shared publication directory:
+
+```sh
+python3 scripts/registry-auto-sync.py \
+  --root /absolute/path/to/registry-releases \
+  --ref main --interval 300 \
+  --validator /absolute/path/to/rwaimport-resolver
+```
+
+It resolves the watched ref to an exact SHA, validates an unchanged active release,
+and builds/activates changed commits through the existing pinned publisher. Failed
+runs retain the current release. `--once` performs one check for an external scheduler.
+The minimum interval is 60 seconds. Give the process Git, Python, the registry's
+supported Node/npm runtime and outbound access. Supervise it with your process manager.
+
+## Publication workflow
+
+`.github/workflows/registry-publication.yml` builds a validated pinned artifact hourly,
+from a manual ref, or from a `repository_dispatch` event of type `registry-published`
+whose payload includes `commit`. A registry release workflow can send that event
+with an appropriately scoped credential; no cross-repository credential is embedded
+in this repository.
+
+Runtime activation requires these deployment settings:
+
+- Repository variable `REGISTRY_PUBLICATION_ENABLED=true`.
+- A trusted self-hosted runner labelled `rwaimport-registry-sync`, with Python and
+  access to the shared runtime volume.
+- `REGISTRY_RELEASE_ROOT` and `RESOLVER_VALIDATOR` repository variables specifying
+  absolute paths on that runner.
+- The `registry-production` GitHub environment, with any desired deployment protections.
+
+Without activation settings, the workflow only builds and uploads the artifact.
+The activation job downloads the artifact from that same run, validates it again
+with the installed resolver, and invokes `sync-registry.py --source ... --commit ...`
+before changing the pointer. Schedules start after the workflow reaches the default
+branch. This workspace change does not provision a runner or activate GitHub settings.

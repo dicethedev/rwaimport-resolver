@@ -18,8 +18,7 @@ Responses also contain product/deployment context, registry revision, evidence,
 Stellar issuer addresses can issue multiple assets. An asset code is mandatory and
 is compared to the registry's recorded `verification.observedSymbol`. Missing or
 ambiguous registry matches do not become verified identities. Aptos lookups support
-fungible-asset metadata objects; legacy Move Coin types need a different locator and
-are not implemented. Solana requires a parsed initialized mint owned by the legacy
+fungible-asset metadata objects; legacy Move Coin types use an explicit `coinType` locator, as described below. Solana requires a parsed initialized mint owned by the legacy
 SPL Token program or Token-2022; an ordinary token account is not a mint.
 
 `VERIFIED` means all selected comparisons succeeded, with more than existence alone.
@@ -65,12 +64,27 @@ use midnight UTC. A missing schedule is unknown. Source URLs are not fetched dur
 resolution. Stored account-data hashes are not compared as immutable claims because
 supply, balances and other mutable data can change them.
 
-Solana mint/freeze authorities, Stellar asset flags and Aptos object ownership are
-observations, not an exhaustive permission audit. Token-2022 extension policies,
-Stellar signer/threshold policies, deployment-specific Aptos permissions and legacy
-Coin adapters remain future work. Registry catalog inclusion alone does not imply a
+Solana mint/freeze authorities and parsed extension controls, Stellar issuer-account
+signers/thresholds, and Aptos object ownership/resource fields can be compared with
+[deployment policies](DEPLOYMENT_POLICIES.md). These are selected permission checks,
+not an exhaustive permission audit. Unreported parsed extensions and capabilities
+held in other accounts cannot be assumed absent. Registry catalog inclusion alone does not imply a
 live detector exists for every standard.
 
 Protocol references: [Solana RPC](https://solana.com/docs/rpc/http),
 [Stellar assets](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/assets/object),
 and [Aptos resources](https://aptos.dev/network/blockchain/resources).
+
+## Aptos legacy Coin locator
+
+Use `GET /v1/resolve/network/aptos/{creatorAddress}/{coinType}`, percent-encoding the
+Coin type as one path segment. The creator address uses 64 hex characters; simple
+Coin types use `0xPACKAGE::module::Struct`. Generic Coin types are not yet supported.
+The package must match the creator address. Batch requests use `coinType`, not
+`assetCode`, for this locator. `CoinInfo<coinType>` is read at the captured ledger
+version. A registry match additionally requires `assetNamespace: "coin"` and the
+matching `assetReference`; a live Coin without a registry record remains `UNKNOWN`.
+An account/resource-not-found response is distinguished from transport failure.
+CoinInfo does not enumerate mint/burn/freeze capabilities held elsewhere.
+
+The shared response and cache behavior are described in [operations](OPERATIONS.md).
