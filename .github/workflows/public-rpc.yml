@@ -1,0 +1,56 @@
+name: Daily public RPC checks
+on:
+  schedule:
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-rpc-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  live-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REGISTRY_REPOSITORY: ${{ vars.REGISTRY_REPOSITORY || 'dicethedev/rwaimport-registry' }}
+      REGISTRY_REF: ${{ vars.REGISTRY_LIVE_REF || 'main' }}
+    defaults:
+      run:
+        working-directory: rwaimport-resolver
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rwaimport-resolver
+      - name: Check out registry publication source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REGISTRY_REPOSITORY }}
+          ref: ${{ env.REGISTRY_REF }}
+          path: rwaimport-registry
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: rwaimport-registry/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Record exact registry revision
+        working-directory: rwaimport-registry
+        run: echo "REGISTRY_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Build and validate the current registry
+        working-directory: rwaimport-registry
+        run: |
+          npm ci
+          npm run check
+      - name: Build resolver
+        run: cargo build --locked
+      - name: Check all supported registry networks
+        run: python3 scripts/live-smoke.py --resolver-only --strict --report reports/public-rpc.json
+      - name: Retain RPC check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-rpc-report
+          path: rwaimport-resolver/reports/public-rpc.json
+          if-no-files-found: warn
+          retention-days: 30

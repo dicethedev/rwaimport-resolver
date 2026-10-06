@@ -1,0 +1,9 @@
+{
+  "1": "https://ethereum-rpc.publicnode.com",
+  "8453": "https://base-rpc.publicnode.com",
+  "137": "https://polygon-bor-rpc.publicnode.com",
+  "42161": "https://arbitrum-one-rpc.publicnode.com",
+  "43114": "https://avalanche-c-chain-rpc.publicnode.com",
+  "56": "https://bsc-rpc.publicnode.com",
+  "4663": "https://robinhood-rpc.publicnode.com"
+}

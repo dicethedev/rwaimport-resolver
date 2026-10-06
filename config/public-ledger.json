@@ -1,0 +1,5 @@
+{
+  "solana": ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"],
+  "stellar": ["https://horizon.stellar.org"],
+  "aptos": ["https://api.mainnet.aptoslabs.com/v1/"]
+}

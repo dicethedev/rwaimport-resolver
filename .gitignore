@@ -1,0 +1,7 @@
+/target/
+.env
+__pycache__/
+/registry-releases/
+/reports/
+.env.*
+!.env.example

@@ -1,0 +1,1436 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-03T18:54:10.131Z",
+  "assets": [
+    {
+      "asset": {
+        "schemaVersion": 2,
+        "id": "buidl",
+        "name": "BlackRock USD Institutional Digital Liquidity Fund",
+        "symbol": "BUIDL",
+        "underlyingId": "fund-buidl",
+        "instrumentType": "fund-share",
+        "denominationCurrency": "USD",
+        "legalStructure": "Private fund managed by BlackRock and tokenized through Securitize.",
+        "securityType": "Private fund share",
+        "underlyingRights": "Beneficial interest in the fund, which invests primarily in cash, U.S. Treasury bills, and repurchase agreements.",
+        "redemptionRights": "Eligible investors may transfer tokens to Securitize Markets for U.S. dollar redemption under fund terms.",
+        "offeringType": "Private placement",
+        "regulatoryExemption": "Securities Act Rule 506(c); Investment Company Act Section 3(c)(7)",
+        "organizationRoles": [
+          {
+            "organizationId": "blackrock",
+            "roles": [
+              "issuer",
+              "asset-manager"
+            ]
+          },
+          {
+            "organizationId": "securitize",
+            "roles": [
+              "tokenization-provider",
+              "transfer-agent",
+              "broker-dealer"
+            ]
+          },
+          {
+            "organizationId": "bny-mellon",
+            "roles": [
+              "custodian",
+              "fund-administrator"
+            ]
+          },
+          {
+            "organizationId": "pricewaterhousecoopers",
+            "roles": [
+              "auditor"
+            ]
+          }
+        ],
+        "description": "BlackRock USD Institutional Digital Liquidity Fund (BUIDL), represented through tokenized or blockchain-integrated fund records.",
+        "assetClass": "money-market",
+        "issuerId": "blackrock",
+        "tokenizationProviderIds": [
+          "securitize"
+        ],
+        "status": "active",
+        "website": "https://securitize.io/learn/press/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
+        "marketDataLinks": [
+          {
+            "provider": "BlackRock",
+            "type": "issuer",
+            "url": "https://securitize.io/learn/press/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
+            "description": "Official product information, NAV, holdings, performance, or investor documentation."
+          },
+          {
+            "provider": "Arbiscan",
+            "type": "chain-explorer",
+            "url": "https://arbiscan.io/token/0xA6525Ae43eDCd03dC08E775774dCAbd3bb925872",
+            "description": "Inspect the live Arbitrum One contract, holders, supply, and transfers."
+          }
+        ],
+        "verifiedBy": [
+          "official-product"
+        ],
+        "dataAvailability": {
+          "securityType": "known",
+          "shareClass": "unknown",
+          "offeringType": "known",
+          "regulatoryExemption": "known",
+          "prospectusUrl": "unknown"
+        }
+      },
+      "deployments": [
+        {
+          "chain": "ethereum",
+          "chainId": 1,
+          "address": "0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041",
+          "assetNamespace": "erc20",
+          "assetReference": "0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041",
+          "deploymentType": "issuer-native",
+          "standardIds": [
+            "erc20"
+          ],
+          "standardEvidence": [
+            {
+              "standardId": "erc20",
+              "method": "issuer-documentation",
+              "sourceId": "official-contracts"
+            }
+          ],
+          "status": "active",
+          "verifiedBy": [
+            "official-contracts"
+          ],
+          "verification": {
+            "lastVerifiedAt": "2026-10-02T08:49:21.485Z",
+            "accountExists": true,
+            "method": "evm-bytecode",
+            "runtimeCodeSha256": "ec9c737dafc40dfe31c9d46ac0f6cb1f40180d31428a9a4e96453b036170fc2a",
+            "explorerVerified": "unknown",
+            "observedName": "BlackRock USD Institutional Digital Liquidity Fund - I Class",
+            "observedSymbol": "BUIDL-I",
+            "observedDecimals": 6,
+            "implementationAddress": "0x9e2693f54831f6f52b0bb952c2935d26919a3626",
+            "dataAvailability": {
+              "deploymentTransaction": "unknown",
+              "deploymentBlock": "unknown",
+              "proxyImplementation": "known",
+              "contractAdmin": "not-applicable",
+              "explorerVerification": "unknown",
+              "observedName": "known",
+              "observedSymbol": "known",
+              "observedDecimals": "known"
+            }
+          }
+        },
+        {
+          "chain": "arbitrum",
+          "chainId": 42161,
+          "address": "0xA6525Ae43eDCd03dC08E775774dCAbd3bb925872",
+          "assetNamespace": "erc20",
+          "assetReference": "0xA6525Ae43eDCd03dC08E775774dCAbd3bb925872",
+          "deploymentType": "bridged",
+          "standardIds": [
+            "erc20"
+          ],
+          "standardEvidence": [
+            {
+              "standardId": "erc20",
+              "method": "issuer-documentation",
+              "sourceId": "official-contracts"
+            }
+          ],
+          "status": "active",
+          "verifiedBy": [
+            "official-contracts",
+            "arbitrum-explorer"
+          ],
+          "verification": {
+            "lastVerifiedAt": "2026-10-03T15:40:21.213Z",
+            "accountExists": true,
+            "method": "evm-bytecode",
+            "runtimeCodeSha256": "ec9c737dafc40dfe31c9d46ac0f6cb1f40180d31428a9a4e96453b036170fc2a",
+            "explorerVerified": "unknown",
+            "observedName": "BlackRock USD Institutional Digital Liquidity Fund",
+            "observedSymbol": "BUIDL",
+            "observedDecimals": 6,
+            "implementationAddress": "0xdbf6db49066784a69244d3b33cf44c25ec86c0f7",
+            "dataAvailability": {
+              "deploymentTransaction": "unknown",
+              "deploymentBlock": "unknown",
+              "proxyImplementation": "known",
+              "contractAdmin": "not-applicable",
+              "explorerVerification": "unknown",
+              "observedName": "known",
+              "observedSymbol": "known",
+              "observedDecimals": "known"
+            }
+          }
+        },
+        {
+          "chain": "solana",
+          "address": "GyWgeqpy5GueU2YbkE8xqUeVEokCMMCEeUrfbtMw6phr",
+          "assetNamespace": "spl",
+          "assetReference": "GyWgeqpy5GueU2YbkE8xqUeVEokCMMCEeUrfbtMw6phr",
+          "deploymentType": "issuer-native",
+          "standardIds": [
+            "solana-token-2022"
+          ],
+          "standardEvidence": [
+            {
+              "standardId": "solana-token-2022",
+              "method": "issuer-documentation",
+              "sourceId": "official-contracts"
+            }
+          ],
+          "status": "active",
+          "verifiedBy": [
+            "official-contracts"
+          ],
+          "verification": {
+            "lastVerifiedAt": "2026-10-02T08:49:21.485Z",
+            "accountExists": true,
+            "method": "solana-account-owner",
+            "accountDataSha256": "bdf38c4931679a5b41889cedbbb78812f0a0a293ac9849d05758a656dff5bbff",
+            "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+            "explorerVerified": "unknown",
+            "observedDecimals": 6,
+            "dataAvailability": {
+              "deploymentTransaction": "unknown",
+              "deploymentBlock": "unknown",
+              "proxyImplementation": "unknown",
+              "contractAdmin": "unknown",
+              "explorerVerification": "unknown",
+              "observedName": "unknown",
+              "observedSymbol": "unknown",
+              "observedDecimals": "known"
+            }
+          }
+        }
+      ],
+      "compliance": {
+        "schemaVersion": 1,
+        "permissioned": "yes",
+        "kycRequired": "yes",
+        "identityRequired": "yes",
+        "transferRestricted": "yes",
+        "transferEnforcement": "mixed",
+        "primaryMarket": {
+          "access": "issuer-onboarding",
+          "kycRequired": "yes",
+          "kybRequired": "yes",
+          "notes": "Investors must complete the issuer or distributor onboarding process before subscribing or redeeming."
+        },
+        "secondaryMarket": {
+          "access": "restricted",
+          "kycRequired": "yes",
+          "kybRequired": "yes",
+          "notes": "Transfers are limited by the product documents, platform rules, and, where deployed, onchain allowlist controls."
+        },
+        "minimumSubscription": {
+          "amount": "5000000",
+          "currency": "USD"
+        },
+        "offeringDocuments": [
+          "https://securitize.io/learn/press/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network"
+        ],
+        "notes": "Eligibility is a summary of published requirements and is not legal or investment advice. Consult the current offering documents before transacting.",
+        "verifiedBy": [
+          "official-product"
+        ],
+        "eligibleInvestorTypes": [
+          "accredited",
+          "qualified-purchaser",
+          "institutional"
+        ],
+        "eligibleJurisdictions": [
+          "US"
+        ],
+        "dataAvailability": {
+          "minimumSubscription": "known",
+          "minimumRedemption": "unknown",
+          "lockupPeriod": "unknown"
+        }
+      },
+      "sources": [
+        {
+          "id": "official-product",
+          "type": "issuer",
+          "title": "Securitize and BlackRock BUIDL launch announcement",
+          "url": "https://securitize.io/learn/press/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
+          "publisher": "BlackRock",
+          "accessedAt": "2026-10-01",
+          "retrievedAt": "2026-10-01T00:00:00Z",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "sourceVersion": "live-page:2026-10-01",
+          "confidence": "high"
+        },
+        {
+          "id": "official-contracts",
+          "type": "issuer",
+          "title": "Official BUIDL Ethereum and Solana deployment disclosures",
+          "url": "https://investors.securitize.io/news/news-details/2025/BlackRock-and-Securitize-Debut-New-BUIDL-Share-Class-on-Solana-Network-03-25-2025/default.aspx",
+          "publisher": "BlackRock",
+          "accessedAt": "2026-10-01",
+          "retrievedAt": "2026-10-01T00:00:00Z",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "sourceVersion": "live-page:2026-10-01",
+          "confidence": "high"
+        },
+        {
+          "id": "arbitrum-explorer",
+          "type": "chain-explorer",
+          "title": "BUIDL contract on Arbitrum One",
+          "url": "https://arbiscan.io/token/0xA6525Ae43eDCd03dC08E775774dCAbd3bb925872",
+          "publisher": "Arbiscan",
+          "accessedAt": "2026-10-01",
+          "retrievedAt": "2026-10-01T00:00:00Z",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "sourceVersion": "live-page:2026-10-01",
+          "confidence": "high"
+        }
+      ],
+      "valuation": {
+        "schemaVersion": 1,
+        "quoteCurrency": "USD",
+        "valuationType": "fixed",
+        "navSourceUrl": "https://securitize.io/learn/press/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
+        "updateFrequency": "Provider-published schedule; see the official product page.",
+        "corporateActionModel": "none",
+        "distributionTreatment": "cash",
+        "reserveReportingUrl": "https://securitize.io/learn/press/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
+        "verifiedBy": [
+          "official-product"
+        ],
+        "dataAvailability": {
+          "oracle": "unknown",
+          "reserveReporting": "known"
+        }
+      },
+      "claims": [
+        {
+          "field": "asset.assetClass",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.denominationCurrency",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.description",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.id",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.instrumentType",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.issuerId",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.legalStructure",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.marketDataLinks",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.name",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.offeringType",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.organizationRoles",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.redemptionRights",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.regulatoryExemption",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.securityType",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.status",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.symbol",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.tokenizationProviderIds",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.underlyingId",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.underlyingRights",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "asset.website",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.eligibleInvestorTypes",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.eligibleJurisdictions",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.identityRequired",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.kycRequired",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.minimumSubscription",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.notes",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.offeringDocuments",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.permissioned",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.primaryMarket",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.secondaryMarket",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.transferEnforcement",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "compliance.transferRestricted",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.corporateActionModel",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.distributionTreatment",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.navSourceUrl",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.quoteCurrency",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.reserveReportingUrl",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.updateFrequency",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "valuation.valuationType",
+          "sourceIds": [
+            "official-product"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[0].chain",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[0].address",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[0].standardIds",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[0].status",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[1].chain",
+          "sourceIds": [
+            "official-contracts",
+            "arbitrum-explorer"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[1].address",
+          "sourceIds": [
+            "official-contracts",
+            "arbitrum-explorer"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[1].standardIds",
+          "sourceIds": [
+            "official-contracts",
+            "arbitrum-explorer"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[1].status",
+          "sourceIds": [
+            "official-contracts",
+            "arbitrum-explorer"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[2].chain",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[2].address",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[2].standardIds",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        },
+        {
+          "field": "deployments[2].status",
+          "sourceIds": [
+            "official-contracts"
+          ],
+          "reviewedAt": "2026-10-01",
+          "reviewStatus": "verified",
+          "confidence": "high"
+        }
+      ],
+      "history": []
+    }
+  ],
+  "issuers": [
+    {
+      "schemaVersion": 1,
+      "id": "blackrock",
+      "name": "BlackRock",
+      "legalName": "BlackRock, Inc.",
+      "type": "asset-manager",
+      "jurisdiction": "US",
+      "status": "active",
+      "website": "https://www.blackrock.com",
+      "sources": [
+        {
+          "title": "BlackRock official website",
+          "url": "https://www.blackrock.com",
+          "accessedAt": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "securitize",
+      "name": "Securitize",
+      "type": "tokenization-provider",
+      "jurisdiction": "US",
+      "status": "active",
+      "website": "https://securitize.io",
+      "sources": [
+        {
+          "title": "Securitize official website",
+          "url": "https://securitize.io",
+          "accessedAt": "2026-10-01"
+        }
+      ]
+    }
+  ],
+  "chains": [
+    {
+      "schemaVersion": 1,
+      "id": "arbitrum",
+      "name": "Arbitrum One",
+      "chainId": 42161,
+      "type": "evm",
+      "namespace": "eip155",
+      "reference": "42161",
+      "addressPattern": "^0x[a-fA-F0-9]{40}$",
+      "nativeCurrency": "ETH",
+      "explorerUrl": "https://arbiscan.io",
+      "status": "active"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "ethereum",
+      "name": "Ethereum",
+      "chainId": 1,
+      "type": "evm",
+      "namespace": "eip155",
+      "reference": "1",
+      "addressPattern": "^0x[a-fA-F0-9]{40}$",
+      "nativeCurrency": "ETH",
+      "explorerUrl": "https://etherscan.io",
+      "status": "active"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "solana",
+      "name": "Solana Mainnet",
+      "type": "solana",
+      "namespace": "solana",
+      "reference": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "addressPattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$",
+      "nativeCurrency": "SOL",
+      "explorerUrl": "https://explorer.solana.com",
+      "status": "active"
+    }
+  ],
+  "standards": [
+    {
+      "schemaVersion": 1,
+      "id": "aptos-fungible-asset",
+      "name": "Aptos Fungible Asset",
+      "category": "fungible-token",
+      "specificationType": "move-standard",
+      "maintainer": "Aptos Labs",
+      "description": "The Aptos object-based standard for fungible assets and their metadata, stores, and controlled capabilities.",
+      "capabilities": [
+        "fungible",
+        "metadata",
+        "object-model"
+      ],
+      "status": "active",
+      "referenceUrl": "https://aptos.dev/build/smart-contracts/fungible-asset"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "cmtat",
+      "name": "CMTAT",
+      "category": "security-token",
+      "specificationType": "industry-framework",
+      "maintainer": "Capital Markets and Technology Association",
+      "version": "3.2.0",
+      "description": "Blockchain-agnostic security-token framework for regulated financial instruments, with an ERC-20-compatible EVM implementation.",
+      "capabilities": [
+        "access-control",
+        "transfer-restrictions",
+        "rule-engine",
+        "pause",
+        "freeze",
+        "forced-transfer",
+        "mint",
+        "burn",
+        "document-management",
+        "debt-metadata",
+        "cross-chain"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc1404",
+        "erc3643",
+        "erc7551",
+        "erc7943"
+      ],
+      "status": "active",
+      "referenceUrl": "https://github.com/CMTA/CMTAT"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc1155",
+      "name": "ERC-1155",
+      "category": "multi-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Multi-token interface supporting fungible, non-fungible, and semi-fungible asset types in one contract.",
+      "capabilities": [
+        "multiple-token-types",
+        "fungible-assets",
+        "non-fungible-assets",
+        "semi-fungible-assets",
+        "batch-transfer",
+        "metadata"
+      ],
+      "relatedStandardIds": [
+        "erc3475",
+        "erc7518",
+        "erc7943"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-1155"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc1400",
+      "name": "ERC-1400",
+      "category": "security-token",
+      "specificationType": "erc",
+      "maintainer": "Security Token Standard contributors",
+      "description": "A security-token interface supporting transfer restrictions and document metadata.",
+      "capabilities": [
+        "transfer-restrictions",
+        "partitioned-balances",
+        "document-management",
+        "forced-transfer"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc1404",
+        "cmtat"
+      ],
+      "status": "stagnant",
+      "referenceUrl": "https://github.com/SecurityTokenStandard/EIP-Spec/blob/master/eip/eip-1400.md"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc1404",
+      "name": "ERC-1404",
+      "category": "restricted-token",
+      "specificationType": "industry-framework",
+      "maintainer": "ERC-1404 community",
+      "description": "ERC-20-compatible restricted-token interface for detecting transfer restrictions and returning human-readable restriction messages.",
+      "capabilities": [
+        "transfer-restrictions",
+        "restriction-detection",
+        "restriction-messages",
+        "allowlist"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "cmtat"
+      ],
+      "status": "active",
+      "referenceUrl": "https://erc1404.org"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc1450",
+      "name": "ERC-1450",
+      "category": "security-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Security-token interface where a registered transfer agent controls transfers, issuance, redemption, and recovery actions.",
+      "capabilities": [
+        "transfer-agent-control",
+        "restricted-transfer",
+        "mint",
+        "burn",
+        "forced-transfer",
+        "wallet-recovery",
+        "broker-registration",
+        "compliance-precheck"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc3643"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-1450"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc20",
+      "name": "ERC-20",
+      "category": "fungible-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Standard interface for fungible tokens on Ethereum-compatible networks.",
+      "capabilities": [
+        "transfer",
+        "allowance",
+        "balance-query",
+        "supply-query"
+      ],
+      "relatedStandardIds": [
+        "erc1404",
+        "erc1450",
+        "erc3643",
+        "erc4626",
+        "erc7943",
+        "cmtat"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-20"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc3475",
+      "name": "ERC-3475",
+      "category": "bond-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Abstract-storage bond interface for tokenized obligations with classes, issuance conditions, metadata, and redemption terms.",
+      "capabilities": [
+        "bond-classes",
+        "bond-metadata",
+        "issuance",
+        "redemption",
+        "batch-operations",
+        "secondary-transfer"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc721",
+        "erc1155",
+        "erc7092"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-3475"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc3525",
+      "name": "ERC-3525",
+      "category": "semi-fungible-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Semi-fungible token model combining unique token IDs with fungible values grouped into slots.",
+      "capabilities": [
+        "unique-positions",
+        "slots",
+        "fractional-value",
+        "value-transfer",
+        "metadata"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc721",
+        "erc7518"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-3525"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc3643",
+      "name": "ERC-3643",
+      "category": "permissioned-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Permissioned token standard with identity and compliance checks.",
+      "capabilities": [
+        "identity-registry",
+        "compliance",
+        "freeze",
+        "forced-transfer",
+        "pause",
+        "mint",
+        "burn"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc7518",
+        "erc7943",
+        "cmtat"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-3643"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc4519",
+      "name": "ERC-4519",
+      "category": "non-fungible-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "NFT interface tying a token to a physical asset that can authenticate itself and track owner or user engagement.",
+      "capabilities": [
+        "physical-asset-link",
+        "asset-authentication",
+        "owner-engagement",
+        "user-assignment",
+        "operating-modes"
+      ],
+      "relatedStandardIds": [
+        "erc721"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-4519"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc4626",
+      "name": "ERC-4626",
+      "category": "tokenized-vault",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Standardized API for tokenized vaults representing shares of an underlying ERC-20 asset.",
+      "capabilities": [
+        "deposit",
+        "withdraw",
+        "share-accounting",
+        "asset-conversion"
+      ],
+      "relatedStandardIds": [
+        "erc20"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-4626"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc7092",
+      "name": "ERC-7092",
+      "category": "bond-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Financial-bond interface using familiar fixed-income fields such as ISIN, denomination, coupon, issue date, and maturity date.",
+      "capabilities": [
+        "isin",
+        "principal",
+        "coupon",
+        "maturity",
+        "issuance",
+        "redemption",
+        "batch-operations",
+        "cross-chain"
+      ],
+      "relatedStandardIds": [
+        "erc3475"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-7092"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc721",
+      "name": "ERC-721",
+      "category": "non-fungible-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Standard interface for unique assets, including deeds and ownership records for distinct physical or digital property.",
+      "capabilities": [
+        "unique-token-id",
+        "ownership",
+        "transfer",
+        "operator-approval",
+        "metadata"
+      ],
+      "relatedStandardIds": [
+        "erc3525",
+        "erc4519",
+        "erc7651"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-721"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc7518",
+      "name": "ERC-7518",
+      "category": "security-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "ERC-1155-based security-token proposal with compliant partitions, token locking, recovery, payouts, and cross-chain interoperability.",
+      "capabilities": [
+        "partitions",
+        "fractional-ownership",
+        "dynamic-compliance",
+        "lock",
+        "freeze",
+        "forced-transfer",
+        "recovery",
+        "payouts",
+        "cross-chain"
+      ],
+      "relatedStandardIds": [
+        "erc1155",
+        "erc3525",
+        "erc3643",
+        "erc7943"
+      ],
+      "status": "review",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-7518"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc7551",
+      "name": "ERC-7551 (eWpG)",
+      "category": "security-token",
+      "specificationType": "erc",
+      "maintainer": "German Federal Association of Crypto Registrars",
+      "description": "Proposed minimum smart-contract interface for crypto securities aligned with Germany's Electronic Securities Act.",
+      "capabilities": [
+        "partial-freeze",
+        "pause",
+        "forced-transfer",
+        "transfer-validation",
+        "terms-document",
+        "legal-metadata"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc3643",
+        "erc7943",
+        "cmtat"
+      ],
+      "status": "draft",
+      "referenceUrl": "https://ethereum-magicians.org/t/erc-7551-crypto-security-token-smart-contract-interface-ewpg-reworked/25477"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc7651",
+      "name": "ERC-7651",
+      "category": "semi-fungible-token",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Proposal for representing fractional ownership and whole non-fungible assets together within one token contract.",
+      "capabilities": [
+        "fractional-ownership",
+        "whole-asset-ownership",
+        "fractional-transfer",
+        "nft-transfer",
+        "nft-banking"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc721"
+      ],
+      "status": "draft",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-7651"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc7943",
+      "name": "ERC-7943 (uRWA)",
+      "category": "rwa-interface",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Universal interface for RWA compliance checks, account eligibility, frozen balances, and enforcement actions across base token types.",
+      "capabilities": [
+        "can-send",
+        "can-receive",
+        "can-transfer",
+        "freeze",
+        "forced-transfer",
+        "compliance-interface"
+      ],
+      "relatedStandardIds": [
+        "erc20",
+        "erc721",
+        "erc1155",
+        "erc3643",
+        "erc7518",
+        "cmtat"
+      ],
+      "status": "final",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-7943"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "erc8056",
+      "name": "ERC-8056 Scaled UI Amount Extension",
+      "category": "rwa-interface",
+      "specificationType": "erc",
+      "maintainer": "Ethereum community",
+      "description": "Draft ERC-20 extension for applying an issuer-controlled display multiplier to token amounts, enabling stock splits and other corporate actions without changing raw balances or total supply.",
+      "capabilities": [
+        "scaled-ui-amounts",
+        "corporate-actions",
+        "pending-multiplier",
+        "interface-detection"
+      ],
+      "relatedStandardIds": [
+        "erc20"
+      ],
+      "status": "draft",
+      "referenceUrl": "https://eips.ethereum.org/EIPS/eip-8056"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "solana-token-2022",
+      "name": "Solana Token Extensions (Token-2022)",
+      "category": "fungible-token",
+      "specificationType": "solana-program",
+      "maintainer": "Solana",
+      "description": "Solana's extensible token program, supporting optional mint and account features such as transfer hooks, pausing, metadata, and permanent delegates.",
+      "capabilities": [
+        "fungible",
+        "extensions",
+        "transfer-controls",
+        "metadata"
+      ],
+      "status": "active",
+      "referenceUrl": "https://solana.com/docs/tokens/extensions"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "stellar-asset",
+      "name": "Stellar Issued Asset",
+      "category": "fungible-token",
+      "specificationType": "stellar-asset",
+      "maintainer": "Stellar Development Foundation",
+      "description": "A Stellar issued asset identified by an asset code and issuing account, with authorization and clawback flags available to regulated issuers.",
+      "capabilities": [
+        "fungible",
+        "issuer-authorization",
+        "clawback"
+      ],
+      "status": "active",
+      "referenceUrl": "https://developers.stellar.org/docs/tokens/stellar-asset-contract"
+    }
+  ],
+  "underlyings": [
+    {
+      "schemaVersion": 1,
+      "id": "fund-buidl",
+      "name": "BlackRock USD Institutional Digital Liquidity Fund",
+      "ticker": "BUIDL",
+      "type": "money-market-fund",
+      "jurisdiction": "US",
+      "currency": "USD",
+      "status": "active",
+      "sourceAssetIds": [
+        "buidl"
+      ],
+      "dataAvailability": {
+        "identifiers": "unknown",
+        "exchange": "unknown",
+        "jurisdiction": "known"
+      }
+    }
+  ],
+  "organizations": [
+    {
+      "schemaVersion": 1,
+      "id": "blackrock",
+      "name": "BlackRock",
+      "legalName": "BlackRock, Inc.",
+      "jurisdiction": "US",
+      "status": "active",
+      "website": "https://www.blackrock.com",
+      "sources": [
+        {
+          "title": "BlackRock official website",
+          "url": "https://www.blackrock.com",
+          "accessedAt": "2026-10-01",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "bny-mellon",
+      "name": "BNY",
+      "legalName": "The Bank of New York Mellon Corporation",
+      "jurisdiction": "US",
+      "status": "active",
+      "website": "https://www.bny.com",
+      "sources": [
+        {
+          "title": "BNY official website",
+          "url": "https://www.bny.com",
+          "accessedAt": "2026-10-01",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "pricewaterhousecoopers",
+      "name": "PricewaterhouseCoopers",
+      "status": "active",
+      "website": "https://www.pwc.com",
+      "sources": [
+        {
+          "title": "PricewaterhouseCoopers official website",
+          "url": "https://www.pwc.com",
+          "accessedAt": "2026-10-01",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "securitize",
+      "name": "Securitize",
+      "jurisdiction": "US",
+      "status": "active",
+      "website": "https://securitize.io",
+      "sources": [
+        {
+          "title": "Securitize official website",
+          "url": "https://securitize.io",
+          "accessedAt": "2026-10-01",
+          "lastVerifiedAt": "2026-10-01",
+          "reviewAfter": "2027-01-01",
+          "confidence": "high"
+        }
+      ]
+    }
+  ]
+}
